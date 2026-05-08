@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/yahoo.js": { "maxDuration": 10 },
+    "api/dolar.js": { "maxDuration": 10 },
+    "api/bcra.js":  { "maxDuration": 10 }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
