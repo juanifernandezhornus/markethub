@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>MarketHub — Dashboard Financiero Argentina</title>
+  <meta name="description" content="Dashboard financiero en tiempo real: dólar, BTC, S&P500, bonos argentinos, mercados globales y Brasil">
+  <meta name="theme-color" content="#0e0e0e">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0e0e0e;--bg2:#161616;--bg3:#202020;--bg4:#2a2a2a;--bd:#2a2a2a;--tx:#f0f0f0;--mt:#777;--mt2:#444;--gn:#3dd68c;--rd:#f56565;--yw:#f6c90e;--bl:#60a5fa;--or:#fb923c;--pu:#a78bfa}
+    body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+    /* NAV */
+    .nav{background:var(--bg);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100}
+    .nav-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
+    .logo{font-size:15px;font-weight:700;letter-spacing:-.4px}.logo span{color:var(--mt);font-weight:400}
+    .live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gn);font-weight:600}
+    .ldot{width:6px;height:6px;border-radius:50%;background:var(--gn);animation:pls 2s infinite}
+    @keyframes pls{0%,100%{opacity:1}50%{opacity:.3}}
+    .dtabs{display:flex;overflow-x:auto;padding:0 10px;scrollbar-width:none;border-top:1px solid var(--bd)}
+    .dtabs::-webkit-scrollbar{display:none}
+    .dtab{padding:9px 14px;font-size:12px;cursor:pointer;white-space:nowrap;color:var(--mt);border-bottom:2px solid transparent;font-weight:500}
+    .dtab:hover{color:var(--tx)}.dtab.active{color:var(--tx);border-bottom-color:var(--tx)}
+    .mhbar{background:var(--bg2);border-bottom:1px solid var(--bd);padding:0 12px;display:flex;align-items:stretch;overflow-x:auto;scrollbar-width:none}
+    .mhbar::-webkit-scrollbar{display:none}
+    .mblk{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 0;border-right:1px solid var(--bd);margin-right:12px;flex-shrink:0}
+    .mblk:last-child{border-right:none;margin-right:0}
+    .mnm{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--mt)}
+    .msr{display:flex;align-items:center;gap:5px}
+    .mst{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700}
+    .sdot{width:5px;height:5px;border-radius:50%}
+    .st-open .sdot{background:var(--gn);animation:pls 2s infinite}.st-open{color:var(--gn)}
+    .st-closed .sdot{background:var(--mt2)}.st-closed{color:var(--mt)}
+    .st-pre .sdot{background:var(--yw);animation:pls 2s infinite}.st-pre{color:var(--yw)}
+    .mcd{font-size:9px;color:var(--mt)}.mdet{font-size:8px;color:var(--mt2);margin-top:1px}
+    .mclk{margin-left:auto;padding-left:12px;display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0}
+    .ctz{font-size:8px;color:var(--mt2)}.ct{font-size:11px;font-weight:600;color:var(--mt)}
+    /* TICKER */
+    .ticker{background:var(--bg2);border-bottom:1px solid var(--bd);padding:6px 14px;display:flex;gap:16px;overflow-x:auto;scrollbar-width:none}
+    .ticker::-webkit-scrollbar{display:none}
+    .tk{display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .tkn{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.3px}
+    .tkv{font-size:12px;font-weight:600}.tkc{font-size:10px;font-weight:500}
+    .tsp{color:var(--bd);font-size:11px}
+    .pos{color:var(--gn)}.neg{color:var(--rd)}.neu{color:var(--yw)}
+    /* PAGES */
+    .page{display:none}.page.active{display:block}
+    /* MOBILE */
+    .mind-wrap{background:var(--bg2);border-bottom:1px solid var(--bd);padding:8px 10px}
+    .mind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+    .mind{background:var(--bg3);border-radius:5px;padding:6px 7px}
+    .mind-l{font-size:8px;color:var(--mt);text-transform:uppercase;font-weight:600;margin-bottom:2px}
+    .mind-v{font-size:13px;font-weight:700;line-height:1.1}.mind-s{font-size:9px;margin-top:1px}
+    .mbb{height:3px;border-radius:2px;background:var(--bg4);margin-top:3px}
+    .mbf{height:3px;border-radius:2px;transition:width .5s}
+    /* LAYOUT */
+    .layout{display:flex}.mcol{flex:1;min-width:0}
+    .sidebar{width:268px;flex-shrink:0;border-left:1px solid var(--bd);position:sticky;top:112px;align-self:flex-start;max-height:calc(100vh - 112px);overflow-y:auto}
+    .sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--bd)}
+    /* DASHBOARD CARDS */
+    .dcard{border-bottom:1px solid var(--bd);padding:14px}
+    .dcard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .dcard-title{font-size:13px;font-weight:700}
+    .dcard-badge{font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--bd);color:var(--mt)}
+    .dcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+    .dcard-stat{background:var(--bg3);border-radius:4px;padding:8px 10px}
+    .dcard-stat-l{font-size:8px;color:var(--mt);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+    .dcard-stat-v{font-size:14px;font-weight:700}
+    .dcard-stat-s{font-size:9px;margin-top:1px}
+    .dcard-footer{display:flex;align-items:center;justify-content:space-between}
+    .dcard-src{font-size:9px;color:var(--mt)}
+    .vbtn{font-size:10px;font-weight:600;color:var(--tx);padding:5px 11px;border:1px solid var(--bd);border-radius:4px;cursor:pointer;background:transparent}
+    .vbtn:hover{background:var(--bg3)}
+    /* SIDEBAR */
+    .sbb{padding:11px 13px;border-bottom:1px solid var(--bd)}
+    .sbt{font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--mt);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .row:last-child{border-bottom:none}
+    .rn{font-size:11px;color:var(--mt)}.rn2{font-size:8px;color:var(--mt2);margin-top:1px}
+    .rv{font-size:12px;font-weight:600;text-align:right}.rc{font-size:9px;text-align:right;color:var(--mt)}
+    .rbtn{cursor:pointer;font-size:11px;color:var(--mt);padding:1px 5px;border:1px solid var(--bd);border-radius:3px}
+    .brb{padding:7px 0 2px}
+    .brh{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--mt2);margin-bottom:4px;display:flex;justify-content:space-between}
+    .brbg{height:4px;background:var(--bg3);border-radius:2px;margin:5px 0 2px}
+    .brf{height:4px;border-radius:2px;transition:width .6s,background .6s}
+    .brz{display:flex;justify-content:space-between;font-size:7px;color:var(--mt2)}
+    .fmeter{height:4px;border-radius:2px;background:linear-gradient(to right,#f56565,#f6c90e,#3dd68c);position:relative;margin:7px 0 3px}
+    .fneedle{position:absolute;top:-5px;width:2px;height:14px;background:#fff;border-radius:1px;transform:translateX(-50%);left:50%;transition:left .6s}
+    .flbs{display:flex;justify-content:space-between;font-size:7px;color:var(--mt)}
+    .trg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+    .tch{background:var(--bg3);border:1px solid var(--bd);border-radius:4px;padding:6px 7px;cursor:pointer}
+    .tch.hot{border-color:rgba(245,101,101,.2)}
+    .trk{font-size:7px;color:var(--mt2);font-weight:700;margin-bottom:2px}
+    .tnm{font-size:10px;font-weight:700;color:var(--tx);line-height:1.2}
+    .tbt{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+    .tcnt{font-size:8px;color:var(--mt)}.tcat{font-size:7px;font-weight:700}
+    .tch.eco .tcat{color:var(--gn)}.tch.pol .tcat{color:var(--bl)}
+    .tft{margin-top:6px;font-size:8px;color:var(--mt2);display:flex;justify-content:space-between}
+    .el{display:inline-flex;font-size:8px;color:var(--mt);border:1px solid var(--bd);padding:2px 6px;border-radius:3px;cursor:pointer}
+    .rsb{font-size:8px;font-weight:700;text-transform:uppercase;color:var(--mt2);padding:4px 0 2px;margin-top:3px;border-top:1px solid rgba(255,255,255,.04)}
+    .rsb:first-of-type{border-top:none;margin-top:0;padding-top:0}
+    .rb2{font-size:7px;padding:1px 4px;border-radius:2px;font-weight:700;margin-left:3px}
+    .rp{background:rgba(96,165,250,.1);color:var(--bl)}.ru{background:rgba(61,214,140,.1);color:var(--gn)}
+    .updr{padding:6px 12px;font-size:9px;color:var(--mt);border-bottom:1px solid var(--bd);display:flex;justify-content:space-between}
+    /* SECTION PAGES */
+    .sh{padding:14px 14px 12px;border-bottom:1px solid var(--bd)}
+    .stit{font-size:20px;font-weight:700;margin-bottom:3px}
+    .ssub{font-size:11px;color:var(--mt)}
+    .sblk{padding:14px;border-bottom:1px solid var(--bd)}
+    .sblt{font-size:12px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .ig{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ic{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:11px}
+    .il{font-size:8px;color:var(--mt);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+    .iv{font-size:18px;font-weight:700}.is{font-size:9px;color:var(--mt);margin-top:2px}
+    .stabs{display:flex;border-bottom:1px solid var(--bd);padding:0 14px;overflow-x:auto;scrollbar-width:none}
+    .stabs::-webkit-scrollbar{display:none}
+    .stab{padding:10px 14px;font-size:12px;cursor:pointer;color:var(--mt);border-bottom:2px solid transparent;font-weight:500;white-space:nowrap}
+    .stab.active{color:var(--tx);border-bottom-color:var(--gn)}
+    .stc{display:none}.stc.active{display:block}
+    /* CHARTS */
+    .cw{position:relative;width:100%;height:210px}
+    .cw-sm{position:relative;width:100%;height:130px}
+    .lgnd{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+    .li{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mt)}
+    .ld2{width:10px;height:4px;border-radius:2px;flex-shrink:0}
+    .cnote{font-size:9px;color:var(--mt2);margin-top:7px}
+    /* NEWS */
+    .ni{padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .ni:last-child{border-bottom:none}
+    .nsr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+    .nst{font-size:9px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:3px;text-transform:uppercase}
+    .s1{background:rgba(245,101,101,.12);color:#f87171}
+    .s2{background:rgba(96,165,250,.12);color:var(--bl)}
+    .s3{background:rgba(61,214,140,.12);color:var(--gn)}
+    .s4{background:rgba(246,201,14,.12);color:var(--yw)}
+    .s0{background:rgba(255,255,255,.08);color:var(--mt)}
+    .ntm{font-size:9px;color:var(--mt2)}
+    .nh{font-size:13px;font-weight:600;line-height:1.4;color:var(--tx);margin-bottom:3px}
+    .ns{font-size:11px;color:#aaa;line-height:1.6}
+    .nlnk{display:inline-flex;font-size:10px;color:var(--mt);margin-top:6px;cursor:pointer;border:1px solid var(--bd);padding:3px 9px;border-radius:3px;text-decoration:none}
+    .nlnk:hover{color:var(--tx)}
+    .nld{display:flex;align-items:center;gap:8px;padding:16px;color:var(--mt);font-size:12px;justify-content:center}
+    .lds{display:inline-flex;gap:3px;align-items:center}
+    .lds span{width:3px;height:3px;border-radius:50%;background:var(--mt);animation:ldot 1s infinite}
+    .lds span:nth-child(2){animation-delay:.15s}.lds span:nth-child(3){animation-delay:.3s}
+    @keyframes ldot{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+    /* SOURCE LINKS */
+    .src-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .src-card{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:10px 12px;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+    .src-card:hover{border-color:var(--mt);background:var(--bg4)}
+    .src-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px}
+    .src-desc{font-size:10px;color:var(--mt)}
+    .src-arrow{font-size:10px;color:var(--mt);margin-top:4px}
+    /* BADGES */
+    .bdg{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:600;flex-shrink:0}
+    .b-lv{background:rgba(61,214,140,.1);color:var(--gn)}
+    .b-rss{background:rgba(251,146,60,.1);color:var(--or)}
+    .b-ref{background:rgba(255,255,255,.08);color:var(--mt)}
+    /* RSI */
+    .rsi-bar{height:10px;border-radius:5px;background:linear-gradient(to right,#3dd68c 0%,#3dd68c 30%,#f6c90e 30%,#f6c90e 70%,#f56565 70%);position:relative;margin:10px 0 4px}
+    .rsi-ndl{position:absolute;top:-4px;width:3px;height:18px;background:#fff;border-radius:2px;transform:translateX(-50%);transition:left .8s;box-shadow:0 0 5px rgba(255,255,255,.4)}
+    .rsi-lbs{display:flex;justify-content:space-between;font-size:9px;color:var(--mt2)}
+    .mc-bg{height:10px;border-radius:5px;background:var(--bg3);overflow:hidden}
+    .mc-fill{height:10px;border-radius:5px;background:linear-gradient(to right,var(--gn),var(--yw));transition:width .8s}
+    /* POLLS */
+    .poll-item{margin-bottom:10px}
+    .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .pbg{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+    .pbf{height:6px;border-radius:3px;transition:width .8s}
+    /* COMPANIES */
+    .co-tbl{width:100%;border-collapse:collapse}
+    .co-tbl th{font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;padding:5px 4px;border-bottom:1px solid var(--bd);text-align:right}
+    .co-tbl th:first-child{text-align:left}
+    .co-tbl td{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;text-align:right}
+    .co-tbl td:first-child{text-align:left}
+    .co-tbl tr:last-child td{border-bottom:none}
+    /* INFO BOX */
+    .info-box{font-size:11px;color:var(--mt);line-height:1.6;padding:10px;background:var(--bg3);border-radius:5px;border-left:2px solid var(--yw);margin-bottom:12px}
+    .info-box b{color:var(--tx)}
+    .spread-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .sc{flex:1;min-width:80px;background:var(--bg3);border-radius:5px;padding:8px 10px;border:1px solid var(--bd)}
+    .sc-l{font-size:8px;color:var(--mt);text-transform:uppercase;margin-bottom:3px}
+    .sc-v{font-size:15px;font-weight:700}.sc-s{font-size:9px;color:var(--mt);margin-top:2px}
+    .sdv{display:flex;align-items:center;gap:10px;margin:12px 0 8px}
+    .sdvl{flex:1;height:.5px;background:var(--bd)}
+    .sdvt{font-size:9px;color:var(--mt);font-weight:600;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+    .btbl{width:100%;border-collapse:collapse}
+    .btbl th{font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.3px;padding:5px 4px;border-bottom:1px solid var(--bd);text-align:left}
+    .btbl th:not(:first-child){text-align:right}
+    .btbl td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;vertical-align:middle}
+    .btbl td:not(:first-child){text-align:right}
+    .btbl tr:last-child td{border-bottom:none}
+    .pll{font-size:8px;padding:2px 6px;border-radius:10px;font-weight:600;display:inline-block}
+    .p-ny{background:rgba(96,165,250,.12);color:var(--bl)}.p-ar{background:rgba(61,214,140,.12);color:var(--gn)}
+    .p-eg{background:rgba(246,201,14,.12);color:var(--yw)}.p-fn{background:rgba(167,139,250,.12);color:var(--pu)}.p-cp{background:rgba(251,146,60,.12);color:var(--or)}
+    /* CPI */
+    .cpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .cpi-card{background:var(--bg3);border-radius:6px;border:1px solid var(--bd);padding:10px;text-align:center}
+    .cpi-v{font-size:20px;font-weight:800;margin:4px 0}.cpi-l{font-size:9px;color:var(--mt);text-transform:uppercase}
+    .cpi-s{font-size:9px;color:var(--mt2);margin-top:2px}
+    /* THERMO */
+    .thermo-bar{width:70%;height:7px;border-radius:4px;background:linear-gradient(to right,#f56565,#f6c90e,#3dd68c);position:relative;margin:8px auto 4px}
+    .thermo-ndl{position:absolute;top:-4px;width:3px;height:15px;background:#fff;border-radius:2px;transform:translateX(-50%);transition:left .8s}
+    /* BOTTOM NAV */
+    .bnav{background:var(--bg2);border-top:1px solid var(--bd);display:none;padding:6px 4px env(safe-area-inset-bottom,8px);position:fixed;bottom:0;left:0;right:0;z-index:100}
+    .bni{display:flex}
+    .bna{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 2px;border-radius:6px}
+    .bni-i{font-size:18px;line-height:1}.bni-l{font-size:9px;color:var(--mt);font-weight:500}
+    .bna.active .bni-l{color:var(--tx);font-weight:700}
+    .bnd{width:4px;height:4px;border-radius:50%;background:var(--tx);margin:1px auto;opacity:0}
+    .bna.active .bnd{opacity:1}
+    @media(max-width:660px){.dtabs,.ticker,.sidebar{display:none}.mind-wrap,.bnav{display:block}body{padding-bottom:80px}}
+    @media(min-width:661px){.mind-wrap,.bnav{display:none}.sidebar{display:block}}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-top"><div class="logo">Market<span>Hub</span></div><div class="live"><div class="ldot"></div>EN VIVO</div></div>
+  <div class="dtabs">
+    <div class="dtab active" onclick="gp('dashboard',0)">Dashboard</div>
+    <div class="dtab" onclick="gp('argentina',1)">🇦🇷 Argentina</div>
+    <div class="dtab" onclick="gp('global',2)">🌎 Global</div>
+    <div class="dtab" onclick="gp('crypto',3)">₿ Crypto</div>
+    <div class="dtab" onclick="gp('brasil',4)">🇧🇷 Brasil</div>
+    <div class="dtab" onclick="gp('informes',5)">📄 Informes</div>
+  </div>
+  <div class="mhbar">
+    <div class="mblk"><span style="font-size:14px">🇦🇷</span><div><div class="mnm">BYMA</div><div class="msr"><div class="mst" id="byma-s"><span class="sdot"></span><span id="byma-l">—</span></div><span class="mcd" id="byma-c"></span></div><div class="mdet">11:00–17:00 ART</div></div></div>
+    <div class="mblk"><span style="font-size:14px">🇺🇸</span><div><div class="mnm">NYSE</div><div class="msr"><div class="mst" id="nyse-s"><span class="sdot"></span><span id="nyse-l">—</span></div><span class="mcd" id="nyse-c"></span></div><div class="mdet">9:30–16:00 ET</div></div></div>
+    <div class="mclk"><div class="ctz">ART</div><div class="ct" id="cl-art">—</div><div class="ctz" style="margin-top:2px">ET</div><div class="ct" id="cl-et">—</div></div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="pg-dashboard" class="page active">
+  <div class="mind-wrap"><div class="mind-grid">
+    <div class="mind"><div class="mind-l">Blue</div><div class="mind-v" id="m-blue">—</div><div class="mind-s" style="color:var(--mt);font-size:8px" id="m-blue-s">—</div></div>
+    <div class="mind"><div class="mind-l">Brecha</div><div class="mind-v" id="m-brecha">—</div><div class="mbb"><div class="mbf" id="m-bf" style="width:0%"></div></div><div class="mind-s" id="m-bst"></div></div>
+    <div class="mind"><div class="mind-l">Reservas</div><div class="mind-v" style="color:var(--bl);font-size:11px" id="m-res">—</div><div class="mind-s" id="m-resv" style="color:var(--mt)">MM USD</div></div>
+    <div class="mind"><div class="mind-l">BTC</div><div class="mind-v" id="m-btc">—</div><div class="mind-s" id="m-btc-c"></div></div>
+    <div class="mind"><div class="mind-l">S&P 500</div><div class="mind-v" id="m-sp">—</div><div class="mind-s" id="m-sp-c"></div></div>
+    <div class="mind"><div class="mind-l">VIX</div><div class="mind-v" id="m-vix">—</div><div class="mind-s" id="m-vix-s" style="font-size:8px"></div></div>
+  </div></div>
+  <div class="ticker">
+    <div class="tk"><span class="tkn">BTC</span><span class="tkv" id="t-btc">—</span><span class="tkc" id="t-btc-c"></span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">S&P500</span><span class="tkv" id="t-sp">—</span><span class="tkc" id="t-sp-c"></span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">MERVAL</span><span class="tkv" id="t-merval">—</span><span class="tkc" id="t-merval-c"></span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">VIX</span><span class="tkv" id="t-vix">—</span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">US10Y</span><span class="tkv" id="t-us10y">—</span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">WTI</span><span class="tkv" id="t-wti">—</span><span class="tkc" id="t-wti-c"></span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">BLUE</span><span class="tkv" id="t-blue">—</span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">MEP</span><span class="tkv" id="t-mep">—</span></div><span class="tsp">|</span>
+    <div class="tk"><span class="tkn">BRECHA</span><span class="tkv" id="t-brecha">—</span></div>
+  </div>
+  <div class="updr"><span id="upd-t">Cargando...</span><span class="rbtn" onclick="loadAll()">↻ Actualizar</span></div>
+
+  <div class="layout">
+    <div class="mcol">
+      <!-- AR CARD -->
+      <div class="dcard">
+        <div class="dcard-header">
+          <div class="dcard-title">🇦🇷 Economía y Política Argentina</div>
+          <span class="dcard-badge">BYMA · BCRA · INDEC</span>
+        </div>
+        <div class="dcard-grid">
+          <div class="dcard-stat"><div class="dcard-stat-l">Dólar Blue</div><div class="dcard-stat-v" id="dc-blue">—</div><div class="dcard-stat-s" id="dc-brecha"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">MERVAL</div><div class="dcard-stat-v" id="dc-merval">—</div><div class="dcard-stat-s" id="dc-merval-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Reservas BCRA</div><div class="dcard-stat-v" style="font-size:13px;color:var(--bl)" id="dc-res">—</div><div class="dcard-stat-s">MM USD</div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Riesgo País</div><div class="dcard-stat-v" id="dc-rp" style="font-size:14px">Ver BCRA</div><div class="dcard-stat-s">EMBI+</div></div>
+        </div>
+        <div class="dcard-footer"><span class="dcard-src">Infobae · TN · La Nación · El Cronista</span><button class="vbtn" onclick="gp('argentina',1)">Ver sección →</button></div>
+      </div>
+      <!-- GL CARD -->
+      <div class="dcard">
+        <div class="dcard-header">
+          <div class="dcard-title">🌎 Mercados Globales – EE.UU.</div>
+          <span class="dcard-badge">NYSE · FED · BLS</span>
+        </div>
+        <div class="dcard-grid">
+          <div class="dcard-stat"><div class="dcard-stat-l">S&P 500</div><div class="dcard-stat-v" id="dc-sp">—</div><div class="dcard-stat-s" id="dc-sp-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">VIX</div><div class="dcard-stat-v" id="dc-vix">—</div><div class="dcard-stat-s" id="dc-vix-s"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">US 10Y Treasury</div><div class="dcard-stat-v" style="color:var(--bl)" id="dc-us10y">—</div><div class="dcard-stat-s">Yield</div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">WTI Petróleo</div><div class="dcard-stat-v" id="dc-wti">—</div><div class="dcard-stat-s" id="dc-wti-c"></div></div>
+        </div>
+        <div class="dcard-footer"><span class="dcard-src">Bloomberg · MarketWatch · FED</span><button class="vbtn" onclick="gp('global',2)">Ver sección →</button></div>
+      </div>
+      <!-- CRYPTO CARD -->
+      <div class="dcard">
+        <div class="dcard-header">
+          <div class="dcard-title">₿ Bitcoin y Ecosistema Crypto</div>
+          <span class="dcard-badge">CoinGecko · Alternative.me</span>
+        </div>
+        <div class="dcard-grid">
+          <div class="dcard-stat"><div class="dcard-stat-l">Bitcoin / USD</div><div class="dcard-stat-v" id="dc-btc">—</div><div class="dcard-stat-s" id="dc-btc-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Fear & Greed</div><div class="dcard-stat-v" id="dc-fng">—</div><div class="dcard-stat-s" id="dc-fng-l"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">RSI (14)</div><div class="dcard-stat-v" id="dc-rsi">—</div><div class="dcard-stat-s" id="dc-rsi-s"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Market Cap</div><div class="dcard-stat-v" style="font-size:14px;color:var(--yw)" id="dc-mc">—</div><div class="dcard-stat-s">USD</div></div>
+        </div>
+        <div class="dcard-footer"><span class="dcard-src">CoinDesk · CoinTelegraph · Glassnode</span><button class="vbtn" onclick="gp('crypto',3)">Ver sección →</button></div>
+      </div>
+      <!-- BRASIL CARD -->
+      <div class="dcard">
+        <div class="dcard-header">
+          <div class="dcard-title">🇧🇷 Brasil — <span id="dc-br-days" style="color:var(--yw)">—</span> días para elecciones</div>
+          <span class="dcard-badge">5 oct. 2026</span>
+        </div>
+        <div class="dcard-grid">
+          <div class="dcard-stat"><div class="dcard-stat-l">EWZ ETF Brasil</div><div class="dcard-stat-v" id="dc-ewz">—</div><div class="dcard-stat-s" id="dc-ewz-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Bovespa</div><div class="dcard-stat-v" id="dc-bvsp">—</div><div class="dcard-stat-s" id="dc-bvsp-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">BRL / USD</div><div class="dcard-stat-v" id="dc-brl">—</div><div class="dcard-stat-s" id="dc-brl-c"></div></div>
+          <div class="dcard-stat"><div class="dcard-stat-l">Inversión</div><div class="dcard-stat-v" style="font-size:14px;color:var(--yw)">MANTENER</div><div class="dcard-stat-s">Largo plazo</div></div>
+        </div>
+        <div class="dcard-footer"><span class="dcard-src">Valor Econômico · Bloomberg Brasil · MSCI</span><button class="vbtn" onclick="gp('brasil',4)">Ver sección →</button></div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sbb"><div class="sbt">Dólar hoy <span class="rbtn" onclick="loadDollar()">↻</span></div><div id="dolar-sb"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando...</div></div>
+        <div class="brb"><div class="brh"><span>Brecha cambiaria</span><span style="font-size:8px;color:var(--mt2)">Blue vs Oficial</span></div><div style="display:flex;align-items:baseline;gap:7px"><div style="font-size:20px;font-weight:800" id="br-v">—</div><div style="font-size:10px;color:var(--mt)" id="br-st">—</div></div><div class="brbg"><div class="brf" id="br-f" style="width:0%"></div></div><div class="brz"><span>0%</span><span>baja</span><span>media</span><span>alta</span></div></div>
+      </div>
+      <div class="sbb"><div class="sbt">Mercados</div>
+        <div class="row"><div><div class="rn">Bitcoin</div></div><div><div class="rv" id="s-btc">—</div><div class="rc" id="s-btc-c"></div></div></div>
+        <div class="row"><div><div class="rn">S&P 500</div></div><div><div class="rv" id="s-sp">—</div><div class="rc" id="s-sp-c"></div></div></div>
+        <div class="row"><div><div class="rn">MERVAL</div><div class="rn2">Índice AR</div></div><div><div class="rv" id="s-merval">—</div><div class="rc" id="s-merval-c"></div></div></div>
+        <div class="row"><div><div class="rn">VIX</div></div><div><div class="rv" id="s-vix">—</div><div class="rc" id="s-vix-s" style="font-size:8px"></div></div></div>
+        <div class="row"><div><div class="rn">US 10Y Treasury</div></div><div><div class="rv" style="color:var(--bl)" id="s-us10y">—</div><div class="rc">yield</div></div></div>
+        <div class="row"><div><div class="rn">WTI</div></div><div><div class="rv" id="s-wti">—</div><div class="rc" id="s-wti-c"></div></div></div>
+        <div class="row"><div><div class="rn">Brent</div></div><div><div class="rv" id="s-brent">—</div><div class="rc" id="s-brent-c"></div></div></div>
+      </div>
+      <div class="sbb"><div class="sbt">Reservas BCRA</div><div style="font-size:22px;font-weight:800;color:var(--bl)" id="s-res">—</div><div style="font-size:9px;color:var(--mt)">millones USD</div><div style="font-size:10px;margin-top:4px" id="s-res-v"></div></div>
+      <div class="sbb"><div class="sbt">Fear & Greed BTC</div>
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:5px"><div style="font-size:28px;font-weight:800;line-height:1" id="s-fng">—</div><div><div style="font-size:12px;font-weight:600" id="s-fng-l">—</div><div style="font-size:9px;color:var(--mt)">índice cripto</div></div></div>
+        <div class="fmeter"><div class="fneedle" id="fng-n"></div></div>
+        <div class="flbs"><span>Miedo</span><span>Neutral</span><span>Codicia</span></div>
+      </div>
+      <div class="sbb"><div class="sbt">Elecciones Brasil</div><div style="text-align:center;padding:3px 0"><div style="font-size:34px;font-weight:800;color:var(--yw)" id="s-br-d">—</div><div style="font-size:9px;color:var(--mt);margin-top:1px">días · 5 oct. 2026</div></div></div>
+      <div class="sbb"><div class="sbt"><span>Fuentes AR</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <a href="https://www.infobae.com/economia" target="_blank" class="el" style="justify-content:space-between;padding:5px 8px">Infobae Economía <span>→</span></a>
+          <a href="https://www.tn.com.ar/economia" target="_blank" class="el" style="justify-content:space-between;padding:5px 8px">TN Economía <span>→</span></a>
+          <a href="https://www.lanacion.com.ar/economia" target="_blank" class="el" style="justify-content:space-between;padding:5px 8px">La Nación Economía <span>→</span></a>
+          <a href="https://www.cronista.com" target="_blank" class="el" style="justify-content:space-between;padding:5px 8px">El Cronista <span>→</span></a>
+          <a href="https://www.ambito.com" target="_blank" class="el" style="justify-content:space-between;padding:5px 8px">Ámbito Financiero <span>→</span></a>
+        </div>
+      </div>
+      <div class="sbb" style="border-bottom:none"><div class="sbt"><span>Tasas AR</span><span class="rbtn" onclick="loadTasas()">↻</span></div>
+        <div class="rsb">🇦🇷 Pesos <span class="rb2 rp">ARS</span></div>
+        <div class="row"><div><div class="rn">Plazo fijo (BADLAR)</div></div><div><div class="rv pos" id="r-badlar">—</div><div class="rc">TNA</div></div></div>
+        <div class="rsb" style="margin-top:5px">💵 Ref. USD</div>
+        <div class="row"><div><div class="rn">GD30</div></div><div><div class="rv neu" id="r-gd30">~11.8%</div><div class="rc">TIR ref.</div></div></div>
+        <div class="row"><div><div class="rn">AL30</div></div><div><div class="rv neu" id="r-al30">~12.4%</div><div class="rc">TIR ref.</div></div></div>
+        <div style="margin-top:6px"><a href="https://www.portfoliopersonal.com" target="_blank" class="el">Ver en Portfolio Personal →</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ARGENTINA ===== -->
+<div id="pg-argentina" class="page">
+  <div class="sh"><div class="stit">🇦🇷 Economía y Política Argentina</div><div class="ssub">Datos en tiempo real · BCRA · INDEC · Infobae · TN · La Nación · El Cronista</div></div>
+  <div class="sblk"><div class="ig">
+    <div class="ic"><div class="il">MERVAL</div><div class="iv" id="a-merval">—</div><div class="is" id="a-merval-c"></div></div>
+    <div class="ic"><div class="il">Reservas BCRA</div><div class="iv" style="font-size:15px;color:var(--bl)" id="a-res">—</div><div class="is" id="a-res-v">MM USD</div></div>
+    <div class="ic"><div class="il">Brecha</div><div class="iv" id="a-brecha">—</div><div class="is" id="a-bst"></div></div>
+    <div class="ic"><div class="il">Dólar Oficial</div><div class="iv" id="a-oficial">—</div><div class="is">Venta</div></div>
+    <div class="ic"><div class="il">IPC mensual</div><div class="iv" style="color:var(--or)">2.4%</div><div class="is">Mar 2025 · INDEC</div></div>
+    <div class="ic"><div class="il">Inflación interanual</div><div class="iv" style="color:var(--rd);font-size:16px">55.9%</div><div class="is">Mar 2025 · INDEC</div></div>
+  </div></div>
+  <div class="stabs">
+    <div class="stab active" onclick="st('arg','mercado')">💵 Mercado</div>
+    <div class="stab" onclick="st('arg','noticias')">📰 Noticias</div>
+    <div class="stab" onclick="st('arg','tasas')">📈 Tasas y Bonos</div>
+  </div>
+  <div id="arg-mercado" class="stc active">
+    <div class="sblk">
+      <div class="sblt"><span>💵 Cotización del Dólar</span><span class="rbtn" onclick="loadDollar()">↻</span></div>
+      <table style="width:100%;border-collapse:collapse"><thead><tr><th style="font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;padding:5px 0;border-bottom:1px solid var(--bd);text-align:left">Tipo</th><th style="font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right">Compra</th><th style="font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;padding:5px 0;border-bottom:1px solid var(--bd);text-align:right">Venta</th><th style="font-size:9px;color:var(--mt);font-weight:600;text-transform:uppercase;padding:5px 0;border-bottom:1px solid var(--bd);text-align:right">Brecha</th></tr></thead><tbody id="dolar-rows"><tr><td colspan="4"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando...</div></td></tr></tbody></table>
+    </div>
+    <div class="sblk">
+      <div class="sblt"><span>📊 Caución Diaria — Historial BADLAR</span><span class="bdg b-lv">BCRA</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <div style="font-size:30px;font-weight:800;color:var(--gn)" id="cau-tna">—</div>
+        <div style="font-size:13px;color:var(--mt)">TNA %</div>
+        <div style="margin-left:auto;text-align:right"><div style="font-size:10px;color:var(--mt)">TEA estimada</div><div style="font-size:18px;font-weight:700;color:var(--yw)" id="cau-tea">—</div></div>
+      </div>
+      <div class="cw-sm"><canvas id="cau-chart"></canvas></div>
+      <div class="cnote" id="cau-note">Cargando datos del BCRA...</div>
+    </div>
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>🔗 Fuentes de mercado</span></div>
+      <div class="src-grid">
+        <a href="https://www.byma.com.ar" target="_blank" class="src-card"><div class="src-name">BYMA</div><div class="src-desc">Bolsa y Mercados Argentinos</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp" target="_blank" class="src-card"><div class="src-name">BCRA</div><div class="src-desc">Variables y estadísticas</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.portfoliopersonal.com/precios" target="_blank" class="src-card"><div class="src-name">Portfolio Personal</div><div class="src-desc">Precios bonos y acciones</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.rava.com/cotizaciones" target="_blank" class="src-card"><div class="src-name">Rava Bursátil</div><div class="src-desc">Cotizaciones en tiempo real</div><div class="src-arrow">Ver →</div></a>
+      </div>
+    </div>
+  </div>
+  <div id="arg-noticias" class="stc">
+    <div class="sblk"><div class="sblt"><span>📰 Últimas noticias</span><span class="bdg b-rss">RSS</span></div><div id="n-arg-rss"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando noticias...</div></div></div>
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>🔗 Ver noticias completas</span></div>
+      <div class="src-grid">
+        <a href="https://www.infobae.com/economia" target="_blank" class="src-card"><div class="src-name">Infobae</div><div class="src-desc">Economía y política</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.tn.com.ar/economia" target="_blank" class="src-card"><div class="src-name">TN</div><div class="src-desc">Noticias económicas</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.lanacion.com.ar/economia" target="_blank" class="src-card"><div class="src-name">La Nación</div><div class="src-desc">Análisis económico</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.cronista.com" target="_blank" class="src-card"><div class="src-name">El Cronista</div><div class="src-desc">Finanzas y mercados</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.ambito.com" target="_blank" class="src-card"><div class="src-name">Ámbito</div><div class="src-desc">Mercados financieros</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.tn.com.ar/politica" target="_blank" class="src-card"><div class="src-name">TN Política</div><div class="src-desc">Noticias políticas</div><div class="src-arrow">Ver →</div></a>
+      </div>
+    </div>
+  </div>
+  <div id="arg-tasas" class="stc">
+    <div class="sblk">
+      <div class="sblt"><span>📈 ETTI — LECAPS y BONCAPS</span><span class="bdg b-ref">Ref. BYMA</span></div>
+      <div class="lgnd"><div class="li"><div class="ld2" style="background:var(--gn)"></div>LECAPS (TNA %)</div><div class="li"><div class="ld2" style="background:var(--bl)"></div>BONCAPS (TNA %)</div></div>
+      <div class="cw"><canvas id="etti-chart"></canvas></div>
+      <div class="cnote">✦ Datos de referencia — verificar tasas actualizadas en <a href="https://www.byma.com.ar" target="_blank" style="color:var(--bl)">BYMA</a> / <a href="https://www.portfoliopersonal.com" target="_blank" style="color:var(--bl)">Portfolio Personal</a></div>
+    </div>
+    <div class="sblk">
+      <div class="sblt"><span>📉 Curvas de Rendimiento USD — Referencia</span></div>
+      <div class="info-box">💡 <b>Spread corporativo:</b> diferencia entre ONs y soberanos — mayor spread = mayor percepción de riesgo corporativo. Tasas de referencia del mercado.</div>
+      <div class="lgnd"><div class="li"><div class="ld2" style="background:var(--rd)"></div>Bonos Soberanos</div><div class="li"><div class="ld2" style="background:var(--or)"></div>ONs Corporativas</div></div>
+      <div class="cw"><canvas id="usd-chart"></canvas></div>
+      <div class="spread-row">
+        <div class="sc"><div class="sc-l">Spread prom.</div><div class="sc-v" style="color:var(--or)">~-250 bps</div><div class="sc-s">ONs vs Soberanos</div></div>
+        <div class="sc"><div class="sc-l">TIR sov. prom.</div><div class="sc-v" style="color:var(--rd)">~12.1%</div><div class="sc-s">GD/AL referencia</div></div>
+        <div class="sc"><div class="sc-l">TIR corp. prom.</div><div class="sc-v" style="color:var(--or)">~8.5%</div><div class="sc-s">ONs referencia</div></div>
+      </div>
+      <div class="sdv"><div class="sdvl"></div><div class="sdvt">Bonos Soberanos — Referencia</div><div class="sdvl"></div></div>
+      <table class="btbl"><thead><tr><th>Bono</th><th>Años</th><th>TIR ref.</th><th>Ley</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">GD30</td><td style="color:var(--mt)">5.1a</td><td><span style="font-weight:700;color:var(--yw)">~11.8%</span></td><td><span class="pll p-ny">NY</span></td></tr>
+        <tr><td style="font-weight:600">GD35</td><td style="color:var(--mt)">10.2a</td><td><span style="font-weight:700;color:var(--yw)">~12.1%</span></td><td><span class="pll p-ny">NY</span></td></tr>
+        <tr><td style="font-weight:600">GD38</td><td style="color:var(--mt)">13.1a</td><td><span style="font-weight:700;color:var(--yw)">~11.8%</span></td><td><span class="pll p-ny">NY</span></td></tr>
+        <tr><td style="font-weight:600">GD41</td><td style="color:var(--mt)">16.0a</td><td><span style="font-weight:700;color:var(--yw)">~12.3%</span></td><td><span class="pll p-ny">NY</span></td></tr>
+        <tr><td style="font-weight:600">AL30</td><td style="color:var(--mt)">5.1a</td><td><span style="font-weight:700;color:var(--yw)">~12.4%</span></td><td><span class="pll p-ar">AR</span></td></tr>
+      </tbody></table>
+      <div class="sdv" style="margin-top:14px"><div class="sdvl"></div><div class="sdvt">ONs Corporativas — Referencia</div><div class="sdvl"></div></div>
+      <table class="btbl"><thead><tr><th>ON</th><th>Emisor</th><th>Años</th><th>TIR ref.</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">YPF 2026</td><td style="color:var(--mt)">YPF</td><td style="color:var(--mt)">1.8a</td><td><span style="font-weight:700;color:var(--or)">~8.8%</span></td></tr>
+        <tr><td style="font-weight:600">YPF 2029</td><td style="color:var(--mt)">YPF</td><td style="color:var(--mt)">4.5a</td><td><span style="font-weight:700;color:var(--or)">~9.5%</span></td></tr>
+        <tr><td style="font-weight:600">Pampa 2027</td><td style="color:var(--mt)">Pampa</td><td style="color:var(--mt)">2.4a</td><td><span style="font-weight:700;color:var(--or)">~7.9%</span></td></tr>
+        <tr><td style="font-weight:600">IRSA 2028</td><td style="color:var(--mt)">IRSA</td><td style="color:var(--mt)">3.1a</td><td><span style="font-weight:700;color:var(--or)">~9.8%</span></td></tr>
+        <tr><td style="font-weight:600">MELI 2028</td><td style="color:var(--mt)">MercadoLibre</td><td style="color:var(--mt)">3.4a</td><td><span style="font-weight:700;color:var(--gn)">~7.2%</span></td></tr>
+      </tbody></table>
+      <div style="margin-top:10px"><a href="https://www.portfoliopersonal.com" target="_blank" class="el">Ver precios actualizados en Portfolio Personal →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GLOBAL ===== -->
+<div id="pg-global" class="page">
+  <div class="sh"><div class="stit">🌎 Mercados Globales – EE.UU.</div><div class="ssub">S&P500 · VIX · US10Y · CPI · FED · Calendario</div></div>
+  <div class="sblk"><div class="ig">
+    <div class="ic"><div class="il">S&P 500</div><div class="iv" id="g-sp">—</div><div class="is" id="g-sp-c"></div></div>
+    <div class="ic"><div class="il">NASDAQ</div><div class="iv" id="g-nq">—</div><div class="is" id="g-nq-c"></div></div>
+    <div class="ic"><div class="il">VIX</div><div class="iv" id="g-vix">—</div><div class="is" id="g-vix-s"></div></div>
+    <div class="ic"><div class="il">US 10Y Treasury</div><div class="iv" style="color:var(--bl)" id="g-us10y">—</div><div class="is">Yield anual</div></div>
+    <div class="ic"><div class="il">WTI Petróleo</div><div class="iv" id="g-wti">—</div><div class="is" id="g-wti-c"></div></div>
+    <div class="ic"><div class="il">Brent</div><div class="iv" id="g-brent">—</div><div class="is" id="g-brent-c"></div></div>
+  </div></div>
+  <!-- CPI -->
+  <div class="sblk">
+    <div class="sblt"><span>📈 Inflación EE.UU. (CPI)</span><span class="bdg b-ref">Último dato BLS</span></div>
+    <div class="cpi-grid">
+      <div class="cpi-card"><div class="cpi-l">Mensual</div><div class="cpi-v" style="color:var(--gn)">+0.2%</div><div class="cpi-s">Mar 2025 · BLS</div></div>
+      <div class="cpi-card"><div class="cpi-l">Interanual</div><div class="cpi-v" style="color:var(--or)">2.4%</div><div class="cpi-s">YoY · Mar 2025</div></div>
+      <div class="cpi-card"><div class="cpi-l">Core CPI</div><div class="cpi-v" style="color:var(--yw)">2.8%</div><div class="cpi-s">Excl. alim. y energía</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:5px;border:1px solid var(--bd);margin-bottom:8px">
+      <div style="font-size:11px;color:var(--mt)">🎯 Objetivo FED:</div>
+      <div style="font-size:14px;font-weight:700;color:var(--gn)">2.0%</div>
+      <div style="font-size:11px;color:var(--or);margin-left:6px">+0.4% sobre objetivo</div>
+    </div>
+    <a href="https://www.bls.gov/cpi/" target="_blank" class="el">Ver datos actualizados en BLS.gov →</a>
+  </div>
+  <div class="stabs">
+    <div class="stab active" onclick="st('gl','cal')">📅 Calendario</div>
+    <div class="stab" onclick="st('gl','noticias')">📰 Noticias</div>
+    <div class="stab" onclick="st('gl','fuentes')">🔗 Fuentes</div>
+  </div>
+  <div id="gl-cal" class="stc active">
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>Eventos de alta volatilidad</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)"><div><div style="font-size:12px;font-weight:600">Decisión tasas FED (FOMC)</div><div style="font-size:10px;color:var(--mt);margin-top:1px">7 may · Impacto en renta fija global</div></div><span style="font-size:9px;color:var(--rd);font-weight:700;white-space:nowrap;margin-left:10px">● ALTO</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)"><div><div style="font-size:12px;font-weight:600">CPI EE.UU. — Inflación abril</div><div style="font-size:10px;color:var(--mt);margin-top:1px">13 may · Clave para expectativas de tasa</div></div><span style="font-size:9px;color:var(--rd);font-weight:700;white-space:nowrap;margin-left:10px">● ALTO</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)"><div><div style="font-size:12px;font-weight:600">Actas del FOMC</div><div style="font-size:10px;color:var(--mt);margin-top:1px">22 may · Señales de política monetaria</div></div><span style="font-size:9px;color:var(--rd);font-weight:700;white-space:nowrap;margin-left:10px">● ALTO</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)"><div><div style="font-size:12px;font-weight:600">PIB EE.UU. Q1 — 2ª estimación</div><div style="font-size:10px;color:var(--mt);margin-top:1px">29 may · Revisión crecimiento</div></div><span style="font-size:9px;color:var(--rd);font-weight:700;white-space:nowrap;margin-left:10px">● ALTO</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><div><div style="font-size:12px;font-weight:600">NFP — Nóminas no agrícolas</div><div style="font-size:10px;color:var(--mt);margin-top:1px">6 jun · El dato de empleo más importante</div></div><span style="font-size:9px;color:var(--rd);font-weight:700;white-space:nowrap;margin-left:10px">● ALTO</span></div>
+    </div>
+  </div>
+  <div id="gl-noticias" class="stc">
+    <div class="sblk"><div class="sblt"><span>📰 Últimas noticias globales</span><span class="bdg b-rss">RSS</span></div><div id="n-gl-rss"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando noticias...</div></div></div>
+  </div>
+  <div id="gl-fuentes" class="stc">
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>🔗 Fuentes globales</span></div>
+      <div class="src-grid">
+        <a href="https://www.bloomberg.com/markets" target="_blank" class="src-card"><div class="src-name">Bloomberg Markets</div><div class="src-desc">Mercados globales</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.marketwatch.com" target="_blank" class="src-card"><div class="src-name">MarketWatch</div><div class="src-desc">Noticias financieras</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://seekingalpha.com" target="_blank" class="src-card"><div class="src-name">Seeking Alpha</div><div class="src-desc">Análisis de inversiones</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.federalreserve.gov/newsevents.htm" target="_blank" class="src-card"><div class="src-name">FED Reserve</div><div class="src-desc">Comunicados oficiales</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.bls.gov" target="_blank" class="src-card"><div class="src-name">BLS.gov</div><div class="src-desc">CPI, empleo, datos EE.UU.</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://fred.stlouisfed.org" target="_blank" class="src-card"><div class="src-name">FRED</div><div class="src-desc">Datos macro EE.UU.</div><div class="src-arrow">Ver →</div></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CRYPTO ===== -->
+<div id="pg-crypto" class="page">
+  <div class="sh"><div class="stit">₿ Ecosistema Crypto</div><div class="ssub">Bitcoin en tiempo real · RSI · Market Cap · Fear & Greed</div></div>
+  <div class="sblk">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">Bitcoin / USD</div><div style="font-size:36px;font-weight:800;line-height:1" id="c-btc">—</div><div style="font-size:13px;margin-top:5px" id="c-btc-c"></div></div>
+      <div id="c-sig" style="text-align:center;padding:10px 14px;background:var(--bg3);border-radius:6px;border:1px solid var(--bd);min-width:90px"><div style="font-size:9px;color:var(--mt);margin-bottom:4px">SEÑAL</div><div style="font-size:15px;font-weight:700" id="c-sig-t">—</div><div style="font-size:8px;color:var(--mt);margin-top:3px">RSI + Δ24h</div></div>
+    </div>
+  </div>
+  <div class="sblk">
+    <div class="sblt"><span>📊 RSI — Índice de Fuerza Relativa (14)</span><span class="bdg b-lv">Calculado en vivo</span></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+      <div><div style="font-size:28px;font-weight:800;line-height:1" id="rsi-v">—</div><div style="font-size:12px;font-weight:600;margin-top:4px" id="rsi-sig">Calculando...</div></div>
+      <div style="flex:1"><div class="rsi-bar"><div class="rsi-ndl" id="rsi-ndl" style="left:50%"></div></div><div class="rsi-lbs"><span style="color:var(--gn)">Sobrevendido &lt;30</span><span>Neutral</span><span style="color:var(--rd)">Sobrecomprado &gt;70</span></div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="background:var(--bg3);border-radius:4px;padding:5px 10px;font-size:11px"><span style="color:var(--mt)">Zona: </span><span style="font-weight:600" id="rsi-zone">—</span></div>
+      <div style="background:var(--bg3);border-radius:4px;padding:5px 10px;font-size:11px"><span style="color:var(--mt)">Señal: </span><span style="font-weight:600" id="rsi-interp">—</span></div>
+    </div>
+  </div>
+  <div class="sblk">
+    <div class="sblt"><span>💰 Market Cap BTC</span></div>
+    <div class="ig" style="margin-bottom:10px">
+      <div class="ic"><div class="il">Market Cap</div><div class="iv" style="font-size:15px;color:var(--yw)" id="c-mc">—</div><div class="is">USD actual</div></div>
+      <div class="ic"><div class="il">ATH precio BTC</div><div class="iv" style="font-size:15px;color:var(--gn)" id="c-ath">—</div><div class="is" id="c-ath-d">—</div></div>
+      <div class="ic"><div class="il">% del ATH</div><div class="iv" style="font-size:15px" id="c-ath-p">—</div><div class="is">vs máximo histórico</div></div>
+      <div class="ic"><div class="il">Vol. 24h</div><div class="iv" style="font-size:14px;color:var(--bl)" id="c-vol-usd">—</div><div class="is">USD</div></div>
+    </div>
+    <div style="font-size:10px;color:var(--mt);margin-bottom:5px">Posición del Market Cap vs Máximo Histórico (~$1.28T, Nov 2021)</div>
+    <div class="mc-bg"><div class="mc-fill" id="mc-fill" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mt2);margin-top:3px"><span>$0</span><span>$400B</span><span>$800B</span><span>ATH $1.28T</span></div>
+  </div>
+  <div class="sblk">
+    <div class="ig">
+      <div class="ic"><div class="il">Fear & Greed</div><div style="font-size:26px;font-weight:800;margin:4px 0" id="c-fng">—</div><div class="fmeter" style="margin:5px 0 3px"><div class="fneedle" id="c-fng-n"></div></div><div class="flbs"><span>Miedo</span><span>Neutral</span><span>Codicia</span></div><div style="font-size:11px;font-weight:600;margin-top:4px" id="c-fng-l">—</div></div>
+      <div class="ic"><div class="il">Volatilidad del día</div><div style="font-size:26px;font-weight:800;margin:4px 0" id="c-vol">—</div><div style="font-size:9px;color:var(--mt);margin-bottom:5px">/100</div><div style="height:6px;border-radius:3px;background:linear-gradient(to right,var(--gn),var(--yw),var(--rd));position:relative;margin:4px 0"><div style="position:absolute;top:-4px;width:2px;height:14px;background:#fff;border-radius:1px;transform:translateX(-50%);transition:left .6s" id="vol-ndl"></div></div><div style="font-size:11px;font-weight:600;margin-top:4px" id="c-vol-l">—</div></div>
+    </div>
+  </div>
+  <div class="sblk">
+    <div class="sblt"><span>📰 Noticias Crypto</span><span class="bdg b-rss">RSS</span></div>
+    <div id="n-cry-rss"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando noticias...</div></div>
+  </div>
+  <div class="sblk" style="border-bottom:none">
+    <div class="sblt"><span>🔗 Fuentes crypto</span></div>
+    <div class="src-grid">
+      <a href="https://www.coindesk.com" target="_blank" class="src-card"><div class="src-name">CoinDesk</div><div class="src-desc">Noticias Bitcoin y crypto</div><div class="src-arrow">Ver →</div></a>
+      <a href="https://cointelegraph.com" target="_blank" class="src-card"><div class="src-name">CoinTelegraph</div><div class="src-desc">Análisis y noticias</div><div class="src-arrow">Ver →</div></a>
+      <a href="https://glassnode.com/insights" target="_blank" class="src-card"><div class="src-name">Glassnode</div><div class="src-desc">On-chain analytics</div><div class="src-arrow">Ver →</div></a>
+      <a href="https://www.coingecko.com/en/coins/bitcoin" target="_blank" class="src-card"><div class="src-name">CoinGecko</div><div class="src-desc">Datos de mercado BTC</div><div class="src-arrow">Ver →</div></a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BRASIL ===== -->
+<div id="pg-brasil" class="page">
+  <div class="sh"><div class="stit">🇧🇷 Brasil</div><div class="ssub">Economía · MSCI · EWZ · Elecciones oct. 2026</div></div>
+  <div class="sblk"><div style="text-align:center;padding:8px 0"><div style="font-size:52px;font-weight:800;color:var(--yw);line-height:1" id="b-days">—</div><div style="font-size:12px;color:var(--mt);margin-top:5px">días para las elecciones presidenciales · 5 oct. 2026</div></div></div>
+  <div class="sblk"><div class="ig">
+    <div class="ic"><div class="il">EWZ — ETF Brasil</div><div class="iv" id="b-ewz">—</div><div class="is" id="b-ewz-c"></div></div>
+    <div class="ic"><div class="il">Bovespa</div><div class="iv" id="b-bvsp">—</div><div class="is" id="b-bvsp-c"></div></div>
+    <div class="ic"><div class="il">BRL / USD</div><div class="iv" id="b-brl">—</div><div class="is" id="b-brl-c"></div></div>
+    <div class="ic"><div class="il">Termómetro inversión</div><div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--yw)">MANTENER</div><div class="thermo-bar"><div class="thermo-ndl" style="left:55%"></div></div><div style="font-size:8px;color:var(--mt);text-align:center;margin-top:2px">Proyección largo plazo</div></div>
+  </div></div>
+  <div class="stabs">
+    <div class="stab active" onclick="st('br','encuestas')">🗳️ Encuestas</div>
+    <div class="stab" onclick="st('br','empresas')">🏢 Empresas</div>
+    <div class="stab" onclick="st('br','noticias')">📰 Noticias</div>
+  </div>
+  <div id="br-encuestas" class="stc active">
+    <div class="sblk">
+      <div class="sblt"><span>Encuestas Presidenciales 2026</span><span class="bdg b-ref">Ref. Datafolha</span></div>
+      <div class="poll-item"><div class="ph"><div><div style="font-size:13px;font-weight:500">Lula (PT)</div></div><div style="font-size:14px;font-weight:700;color:#f56565">32%</div></div><div class="pbg"><div class="pbf" style="width:32%;background:#f56565"></div></div></div>
+      <div class="poll-item"><div class="ph"><div><div style="font-size:13px;font-weight:500">Tarcísio de Freitas (PL)</div></div><div style="font-size:14px;font-weight:700;color:#60a5fa">28%</div></div><div class="pbg"><div class="pbf" style="width:28%;background:#60a5fa"></div></div></div>
+      <div class="poll-item"><div class="ph"><div><div style="font-size:13px;font-weight:500">Otros / Indecisos</div></div><div style="font-size:14px;font-weight:700;color:#555">40%</div></div><div class="pbg"><div class="pbf" style="width:40%;background:#555"></div></div></div>
+      <div style="margin-top:8px;font-size:9px;color:var(--mt2)">Referencia Datafolha / Quaest · Para datos actualizados:</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+        <a href="https://datafolha.folha.uol.com.br" target="_blank" class="el">Datafolha →</a>
+        <a href="https://quaest.com.br" target="_blank" class="el">Quaest →</a>
+      </div>
+    </div>
+  </div>
+  <div id="br-empresas" class="stc">
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>Top Empresas MSCI Brasil</span><span class="bdg b-lv">Yahoo Finance</span></div>
+      <table class="co-tbl"><thead><tr><th>Empresa</th><th>Precio</th><th>Var. 24h</th></tr></thead>
+      <tbody id="b-cos"><tr><td colspan="3"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando...</div></td></tr></tbody></table>
+    </div>
+  </div>
+  <div id="br-noticias" class="stc">
+    <div class="sblk"><div class="sblt"><span>📰 Noticias Brasil</span><span class="bdg b-rss">RSS</span></div><div id="n-br-rss"><div class="nld"><span class="lds"><span></span><span></span><span></span></span>Cargando noticias...</div></div></div>
+    <div class="sblk" style="border-bottom:none">
+      <div class="sblt"><span>🔗 Fuentes Brasil</span></div>
+      <div class="src-grid">
+        <a href="https://www.valor.com.br" target="_blank" class="src-card"><div class="src-name">Valor Econômico</div><div class="src-desc">Economía y finanzas BR</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.bloomberg.com.br" target="_blank" class="src-card"><div class="src-name">Bloomberg Brasil</div><div class="src-desc">Mercados brasileños</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.b3.com.br" target="_blank" class="src-card"><div class="src-name">B3 Bolsa</div><div class="src-desc">Bolsa de valores Brasil</div><div class="src-arrow">Ver →</div></a>
+        <a href="https://www.bcb.gov.br" target="_blank" class="src-card"><div class="src-name">BCB</div><div class="src-desc">Banco Central Brasil</div><div class="src-arrow">Ver →</div></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INFORMES ===== -->
+<div id="pg-informes" class="page">
+  <div class="sh"><div class="stit">📄 Informes de Consultoras</div><div class="ssub">Foco en Argentina · Links directos a fuentes oficiales</div></div>
+  <div style="padding:14px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">JP Morgan</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--bl)">Banco Global</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Informes de renta fija, deuda soberana y perspectivas macro para Argentina y mercados emergentes. Cobertura de bonos GD y AL, riesgo soberano y proyecciones macro.</div>
+      <a href="https://www.jpmorgan.com/insights/research" target="_blank" class="el">Ver informes →</a>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">Goldman Sachs</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--bl)">Banco Global</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Global Macro Research con perspectivas para mercados emergentes. Análisis de Argentina, tipo de cambio, deuda y outlook de inversión.</div>
+      <a href="https://www.goldmansachs.com/insights" target="_blank" class="el">Ver informes →</a>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">Morgan Stanley</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--bl)">Banco Global</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Análisis de emergentes con enfoque en Argentina. Cobertura de MERVAL, bonos soberanos y proyecciones de crecimiento.</div>
+      <a href="https://www.morganstanley.com/ideas" target="_blank" class="el">Ver informes →</a>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">BCRA — Banco Central</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--gn)">Oficial</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Informes monetarios, estadísticas de tasas, reservas internacionales, tipo de cambio y boletines del Banco Central de la República Argentina.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <a href="https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp" target="_blank" class="el">Variables principales →</a>
+        <a href="https://www.bcra.gob.ar/PublicacionesEstadisticas/Informe_monetario_diario.asp" target="_blank" class="el">Informe monetario →</a>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">INDEC</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--gn)">Oficial</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Instituto Nacional de Estadística. IPC (inflación), PBI, comercio exterior, empleo, canasta básica y todas las estadísticas oficiales de Argentina.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31" target="_blank" class="el">IPC (inflación) →</a>
+        <a href="https://www.indec.gob.ar" target="_blank" class="el">INDEC.gob.ar →</a>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:14px;font-weight:600">Seeking Alpha</div><span style="font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid var(--bd);color:var(--or)">Análisis</span></div>
+      <div style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:8px">Análisis y opiniones sobre activos argentinos: bonos soberanos, acciones y CEDEARs. Cobertura de YPF, Banco Macro, Pampa y otros.</div>
+      <a href="https://seekingalpha.com/search?q=argentina" target="_blank" class="el">Buscar Argentina →</a>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav"><div class="bni">
+  <div class="bna active" id="bn-0" onclick="gp('dashboard',0)"><div class="bni-i">📊</div><div class="bni-l">Dashboard</div><div class="bnd"></div></div>
+  <div class="bna" id="bn-1" onclick="gp('argentina',1)"><div class="bni-i">🇦🇷</div><div class="bni-l">Argentina</div><div class="bnd"></div></div>
+  <div class="bna" id="bn-2" onclick="gp('global',2)"><div class="bni-i">🌎</div><div class="bni-l">Global</div><div class="bnd"></div></div>
+  <div class="bna" id="bn-3" onclick="gp('crypto',3)"><div class="bni-i">₿</div><div class="bni-l">Crypto</div><div class="bnd"></div></div>
+  <div class="bna" id="bn-4" onclick="gp('brasil',4)"><div class="bni-i">🇧🇷</div><div class="bni-l">Brasil</div><div class="bnd"></div></div>
+</div></div>
+
+<script>
+// ===== NAVIGATION =====
+const PAGES=['dashboard','argentina','global','crypto','brasil','informes'];
+const TG={arg:['mercado','noticias','tasas'],gl:['cal','noticias','fuentes'],br:['encuestas','empresas','noticias']};
+function gp(name,idx){
+  PAGES.forEach(p=>document.getElementById('pg-'+p).classList.remove('active'));
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  for(let i=0;i<5;i++){const b=document.getElementById('bn-'+i);if(b)b.classList.remove('active');}
+  document.getElementById('pg-'+name).classList.add('active');
+  const di=PAGES.indexOf(name);
+  if(di>=0){const dt=document.querySelectorAll('.dtab')[di];if(dt)dt.classList.add('active');}
+  if(idx!==undefined){const bn=document.getElementById('bn-'+idx);if(bn)bn.classList.add('active');}
+  window.scrollTo(0,0);
+}
+function st(grp,tab){
+  const pgMap={arg:'argentina',gl:'global',br:'brasil'};
+  const pg=pgMap[grp];
+  TG[grp].forEach(t=>{const e=document.getElementById(grp+'-'+t);if(e)e.classList.remove('active');});
+  document.querySelectorAll('#pg-'+pg+' .stab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById(grp+'-'+tab);if(el)el.classList.add('active');
+  const idx=TG[grp].indexOf(tab);
+  const tabs=document.querySelectorAll('#pg-'+pg+' .stab');
+  if(idx>=0&&tabs[idx])tabs[idx].classList.add('active');
+}
+
+// ===== UTILS =====
+const fN=(n,d=0)=>n==null||isNaN(n)?'—':new Intl.NumberFormat('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);
+const fUSD=(n,d=0)=>'$'+fN(n,d);
+const fARS=(n)=>'$'+fN(n,0);
+const fPct=(n,d=1)=>fN(n,d)+'%';
+const fB=(n)=>{if(!n)return'—';if(n>=1e12)return'$'+fN(n/1e12,2)+'T';if(n>=1e9)return'$'+fN(n/1e9,1)+'B';return'$'+fN(n/1e6,0)+'M';};
+const chgCls=c=>c>=0?'pos':'neg';
+const chgStr=c=>(c>=0?'+':'')+c.toFixed(2)+'%';
+const pad=n=>String(n).padStart(2,'0');
+function se(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function sh(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v;}
+function openLink(url){window.open(url,'_blank','noopener');}
+
+// ===== MARKET HOURS =====
+function getMH(){
+  const now=new Date(),day=now.getUTCDay(),isWk=day===0||day===6;
+  const aH=((now.getUTCHours()-3+24)%24),aM=now.getUTCMinutes(),aT=aH*60+aM;
+  const yr=now.getUTCFullYear();
+  const ds=new Date(Date.UTC(yr,2,8));ds.setUTCDate(8+(7-ds.getUTCDay())%7);
+  const de=new Date(Date.UTC(yr,10,1));de.setUTCDate(1+(7-de.getUTCDay())%7);
+  const isDST=now>=ds&&now<de;
+  const eH=((now.getUTCHours()+(isDST?-4:-5)+24)%24),eM=now.getUTCMinutes(),eT=eH*60+eM;
+  const cd=r=>`${Math.floor(r/60)}h ${r%60}m`;
+  let bS,bC;
+  if(isWk){bS='closed';bC='Fin de semana';}
+  else if(aT>=660&&aT<1020){bS='open';bC='Cierra en '+cd(1020-aT);}
+  else if(aT<660){bS='closed';bC='Abre en '+cd(660-aT);}
+  else{bS='closed';bC='Reabre mañana';}
+  let nS,nC;
+  if(isWk){nS='closed';nC='Fin de semana';}
+  else if(eT>=570&&eT<960){nS='open';nC='Cierra en '+cd(960-eT);}
+  else if(eT>=240&&eT<570){nS='pre';nC='Regular en '+cd(570-eT);}
+  else if(eT<240){nS='closed';nC='Pre-mkt en '+cd(240-eT);}
+  else{nS='closed';nC='Reabre mañana';}
+  return{bS,bC,nS,nC,aH,aM,eH,eM};
+}
+function updateMH(){
+  const s=getMH();
+  const be=document.getElementById('byma-s');if(be)be.className='mst st-'+s.bS;
+  se('byma-l',s.bS==='open'?'ABIERTO':'CERRADO');se('byma-c',s.bC);
+  const ne=document.getElementById('nyse-s');if(ne)ne.className='mst st-'+s.nS;
+  se('nyse-l',s.nS==='open'?'OPEN':s.nS==='pre'?'PRE-MKT':'CLOSED');se('nyse-c',s.nC);
+  se('cl-art',pad(s.aH)+':'+pad(s.aM));se('cl-et',pad(s.eH)+':'+pad(s.eM));
+}
+
+// ===== DOLLAR =====
+let dolarData=null;
+async function loadDollar(){
+  try{
+    const r=await fetch('/api/dolar');
+    dolarData=await r.json();
+    const order=['oficial','blue','mep','ccl','cripto'];
+    const lbls={oficial:'Oficial',blue:'Blue',mep:'MEP (Bolsa)',ccl:'CCL',cripto:'USDT Crypto'};
+    const of=dolarData.find(x=>x.nombre.toLowerCase()==='oficial');
+    let sbH='',tH='';
+    order.forEach(k=>{
+      const d=dolarData.find(x=>x.nombre.toLowerCase()===k);if(!d)return;
+      sbH+=`<div class="row"><span class="rn">${lbls[k]}</span><div><div class="rv">${fARS(d.venta)}</div><div class="rc">Compra ${fARS(d.compra)}</div></div></div>`;
+      const br=of&&k!=='oficial'?((d.venta-of.venta)/of.venta*100):null;
+      const bc=br===null?'':br<15?'background:rgba(61,214,140,.12);color:var(--gn)':br<40?'background:rgba(246,201,14,.12);color:var(--yw)':'background:rgba(245,101,101,.12);color:var(--rd)';
+      const bh=br!==null?`<span style="font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;${bc}">${br.toFixed(1)}%</span>`:'—';
+      tH+=`<tr style="border-bottom:1px solid rgba(255,255,255,.04)"><td style="font-size:12px;color:var(--mt);padding:7px 0">${lbls[k]}</td><td style="font-size:11px;color:var(--mt);text-align:right;padding:7px 6px">${fARS(d.compra)}</td><td style="font-size:13px;font-weight:700;text-align:right;padding:7px 0">${fARS(d.venta)}</td><td style="text-align:right;padding:7px 0">${bh}</td></tr>`;
+    });
+    sh('dolar-sb',sbH);sh('dolar-rows',tH);
+    const bl=dolarData.find(x=>x.nombre.toLowerCase()==='blue');
+    const mep=dolarData.find(x=>x.nombre.toLowerCase()==='mep');
+    if(bl){se('t-blue',fARS(bl.venta));se('m-blue',fARS(bl.venta));se('m-blue-s','Compra '+fARS(bl.compra));se('dc-blue',fARS(bl.venta));}
+    if(mep)se('t-mep',fARS(mep.venta));
+    if(of)se('a-oficial',fARS(of.venta));
+    updateBrecha();
+  }catch(e){console.error(e);}
+}
+function updateBrecha(){
+  if(!dolarData)return;
+  const of=dolarData.find(x=>x.nombre.toLowerCase()==='oficial');
+  const bl=dolarData.find(x=>x.nombre.toLowerCase()==='blue');
+  if(!of||!bl)return;
+  const br=((bl.venta-of.venta)/of.venta*100);
+  const col=br<15?'var(--gn)':br<40?'var(--yw)':'var(--rd)';
+  const st2=br<15?'🟢 Baja':br<40?'🟡 Moderada':'🔴 Alta';
+  const pct=fPct(br);
+  const bv=document.getElementById('br-v');if(bv){bv.textContent=pct;bv.style.color=col;}
+  se('br-st',st2);
+  const bf=document.getElementById('br-f');if(bf){bf.style.width=Math.min(br,80)+'%';bf.style.background=col;}
+  const mb=document.getElementById('m-brecha');if(mb){mb.textContent=pct;mb.style.color=col;}
+  const mf=document.getElementById('m-bf');if(mf){mf.style.width=Math.min(br,80)+'%';mf.style.background=col;}
+  se('m-bst',st2);
+  const tb=document.getElementById('t-brecha');if(tb){tb.textContent=pct;tb.className='tkv '+(br<15?'pos':br<40?'neu':'neg');}
+  const ab=document.getElementById('a-brecha');if(ab){ab.textContent=pct;ab.style.color=col;}
+  se('a-bst',st2);
+  // Dashboard card
+  const dc=document.getElementById('dc-brecha');if(dc){dc.textContent='Brecha '+pct;dc.style.color=col;}
+}
+
+// ===== STOCKS =====
+async function loadStocks(){
+  const items=[
+    {sym:'^GSPC',vs:['s-sp','g-sp','dc-sp'],cs:['s-sp-c','g-sp-c','dc-sp-c'],tv:'t-sp',tc:'t-sp-c',mv:'m-sp',mc:'m-sp-c',d:2},
+    {sym:'^IXIC',vs:['g-nq'],cs:['g-nq-c'],d:2},
+    {sym:'^MERV',vs:['s-merval','a-merval','dc-merval'],cs:['s-merval-c','a-merval-c','dc-merval-c'],tv:'t-merval',tc:'t-merval-c',d:0},
+    {sym:'^VIX',vs:['s-vix','g-vix','dc-vix'],cs:[],tv:'t-vix',mv:'m-vix',d:2,vix:true},
+    {sym:'^TNX',vs:['s-us10y','g-us10y','dc-us10y'],cs:[],tv:'t-us10y',d:3,yld:true},
+    {sym:'CL=F',vs:['s-wti','g-wti','dc-wti'],cs:['s-wti-c','g-wti-c','dc-wti-c'],tv:'t-wti',tc:'t-wti-c',d:2},
+    {sym:'BZ=F',vs:['s-brent','g-brent'],cs:['s-brent-c','g-brent-c'],d:2},
+    {sym:'EWZ',vs:['b-ewz','dc-ewz'],cs:['b-ewz-c','dc-ewz-c'],d:2},
+    {sym:'^BVSP',vs:['b-bvsp','dc-bvsp'],cs:['b-bvsp-c','dc-bvsp-c'],d:0},
+    {sym:'BRL=X',vs:['b-brl','dc-brl'],cs:['b-brl-c','dc-brl-c'],d:4},
+  ];
+  for(const item of items){
+    try{
+      const r=await fetch(`/api/yahoo?symbol=${encodeURIComponent(item.sym)}`);
+      if(!r.ok)throw new Error();
+      const res=(await r.json()).chart.result[0];
+      const p=res.meta.regularMarketPrice,prev=res.meta.chartPreviousClose||p,ch=((p-prev)/prev*100);
+      const vs=item.yld?fN(p,3)+'%':fN(p,item.d),cs=chgStr(ch),cls=chgCls(ch);
+      item.vs.forEach(id=>se(id,vs));
+      item.cs.forEach(id=>{const e=document.getElementById(id);if(e){e.textContent=cs;e.className=(e.className.split(' ')[0]||'is')+' '+cls;}});
+      if(item.tv)se(item.tv,vs);
+      if(item.tc){const e=document.getElementById(item.tc);if(e){e.textContent=cs;e.className='tkc '+cls;}}
+      if(item.mv)se(item.mv,vs);
+      if(item.mc){const e=document.getElementById(item.mc);if(e){e.textContent=cs;e.className='mind-s '+cls;}}
+      if(item.vix){const vst=p<20?'🟢 Calmo':p<30?'🟡 Estrés':'🔴 Pánico';['s-vix-s','g-vix-s','m-vix-s','dc-vix-s'].forEach(id=>se(id,vst));}
+    }catch(e){item.vs.forEach(id=>se(id,'—'));}
+  }
+}
+
+// ===== BTC + RSI + MARKET CAP =====
+function calcRSI(prices,per=14){
+  if(prices.length<per+1)return null;
+  let ag=0,al=0;
+  for(let i=1;i<=per;i++){const d=prices[i]-prices[i-1];if(d>0)ag+=d;else al+=Math.abs(d);}
+  ag/=per;al/=per;
+  for(let i=per+1;i<prices.length;i++){const d=prices[i]-prices[i-1];if(d>0){ag=(ag*(per-1)+d)/per;al=al*(per-1)/per;}else{ag=ag*(per-1)/per;al=(al*(per-1)+Math.abs(d))/per;}}
+  if(al===0)return 100;
+  return 100-(100/(1+ag/al));
+}
+async function loadBTC(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_7d_change=true&include_market_cap=true&include_24hr_vol=true');
+    const d=(await r.json()).bitcoin;
+    const p=d.usd,ch=d.usd_24h_change||0,mc=d.usd_market_cap,vol=d.usd_24h_vol;
+    ['t-btc','s-btc','c-btc','m-btc','dc-btc'].forEach(id=>se(id,fUSD(p)));
+    const tc=document.getElementById('t-btc-c');if(tc){tc.textContent=chgStr(ch);tc.className='tkc '+chgCls(ch);}
+    const sc=document.getElementById('s-btc-c');if(sc){sc.textContent=chgStr(ch);sc.className='rc '+chgCls(ch);}
+    const cc=document.getElementById('c-btc-c');if(cc){cc.textContent=chgStr(ch)+' (24h)';cc.className=chgCls(ch);}
+    const mc2=document.getElementById('m-btc-c');if(mc2){mc2.textContent=chgStr(ch);mc2.className='mind-s '+chgCls(ch);}
+    const dcc=document.getElementById('dc-btc-c');if(dcc){dcc.textContent=chgStr(ch);dcc.className='dcard-stat-s '+chgCls(ch);}
+    se('c-mc',fB(mc));se('dc-mc',fB(mc));se('c-vol-usd',fB(vol));
+    const mf=document.getElementById('mc-fill');if(mf)mf.style.width=Math.min((mc/1280000000000)*100,100)+'%';
+    const vol100=Math.min(100,Math.round(Math.abs(ch)*10));
+    const ve=document.getElementById('c-vol');if(ve)ve.textContent=vol100;
+    const vn=document.getElementById('vol-ndl');if(vn)vn.style.left=vol100+'%';
+    const vl=document.getElementById('c-vol-l');if(vl){if(vol100<30){vl.textContent='Baja';vl.className='pos';}else if(vol100<65){vl.textContent='Moderada';vl.className='neu';}else{vl.textContent='Alta';vl.className='neg';}}
+    const sig=document.getElementById('c-sig-t');if(sig){if(ch>3){sig.textContent='▲ COMPRAR';sig.style.color='var(--gn)';}else if(ch<-3){sig.textContent='▼ VENDER';sig.style.color='var(--rd)';}else{sig.textContent='● MANTENER';sig.style.color='var(--yw)';}}
+  }catch(e){console.error(e);}
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false');
+    const d=await r.json();
+    const ath=d.market_data?.ath?.usd,athDate=d.market_data?.ath_date?.usd,cp2=d.market_data?.current_price?.usd;
+    if(ath){se('c-ath',fUSD(ath));se('c-ath-d',athDate?new Date(athDate).toLocaleDateString('es-AR',{month:'short',year:'numeric'}):'Nov 2021');}
+    if(ath&&cp2){const pp=((cp2/ath)*100);const el=document.getElementById('c-ath-p');if(el){el.textContent=fPct(pp,1)+' del ATH';el.style.color=pp>80?'var(--gn)':pp>50?'var(--yw)':'var(--rd)';}}
+  }catch(e){}
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=20&interval=daily');
+    const prices=(await r.json()).prices.map(p=>p[1]);
+    const rsi=calcRSI(prices,14);
+    if(rsi!==null){
+      const rv=Math.round(rsi);
+      const re=document.getElementById('rsi-v');if(re){re.textContent=rv;re.style.color=rsi<30?'var(--gn)':rsi>70?'var(--rd)':'var(--yw)';}
+      const nd=document.getElementById('rsi-ndl');if(nd)nd.style.left=rsi+'%';
+      const rs=document.getElementById('rsi-sig'),rz=document.getElementById('rsi-zone'),ri=document.getElementById('rsi-interp');
+      se('dc-rsi',rv);
+      if(rsi<30){
+        if(rs){rs.textContent='▲ SOBREVENDIDO — Posible rebote';rs.style.color='var(--gn)';}
+        if(rz){rz.textContent='Zona verde (<30)';rz.style.color='var(--gn)';}
+        if(ri)ri.textContent='El mercado puede estar exagerado a la baja';
+        se('dc-rsi-s','Sobrevendido ▲');
+      }else if(rsi>70){
+        if(rs){rs.textContent='▼ SOBRECOMPRADO — Posible corrección';rs.style.color='var(--rd)';}
+        if(rz){rz.textContent='Zona roja (>70)';rz.style.color='var(--rd)';}
+        if(ri)ri.textContent='El mercado puede estar exagerado al alza';
+        se('dc-rsi-s','Sobrecomprado ▼');
+      }else{
+        if(rs){rs.textContent='● NEUTRAL — Momentum equilibrado';rs.style.color='var(--yw)';}
+        if(rz){rz.textContent='Zona neutral (30–70)';rz.style.color='var(--yw)';}
+        if(ri)ri.textContent='Sin señales extremas de compra o venta';
+        se('dc-rsi-s','Neutral ●');
+      }
+    }
+  }catch(e){}
+}
+
+// ===== FEAR & GREED =====
+async function loadFNG(){
+  try{
+    const r=await fetch('https://api.alternative.me/fng/?limit=1');
+    const d=(await r.json()).data[0];const v=parseInt(d.value);
+    const map={'Extreme Fear':'Miedo Extremo','Fear':'Miedo','Neutral':'Neutral','Greed':'Codicia','Extreme Greed':'Codicia Extrema'};
+    const l=map[d.value_classification]||d.value_classification;
+    const col=v<30?'var(--rd)':v<55?'var(--yw)':'var(--gn)';
+    ['s-fng','c-fng','dc-fng'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent=v;e.style.color=col;}});
+    ['s-fng-l','c-fng-l','dc-fng-l'].forEach(id=>se(id,l));
+    ['fng-n','c-fng-n'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.left=v+'%';});
+  }catch(e){}
+}
+
+// ===== RESERVAS BCRA =====
+async function loadReservas(){
+  try{
+    const today=new Date(),from=new Date(today-14*864e5).toISOString().split('T')[0],to=today.toISOString().split('T')[0];
+    const r=await fetch(`/api/bcra?variable=1&from=${from}&to=${to}`);
+    if(!r.ok)throw new Error();
+    const data=(await r.json()).results||[];if(!data.length)throw new Error();
+    const last=data[data.length-1],prev=data.length>1?data[data.length-2]:null;
+    const val=last.valor,str='U$S '+fN(val);
+    ['s-res','a-res','m-res','dc-res'].forEach(id=>se(id,str));
+    if(prev){const diff=val-prev.valor,dstr=(diff>=0?'▲ +':'▼ ')+fN(diff)+' MM';['s-res-v','a-res-v','m-resv'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent=dstr;e.style.color=diff>=0?'var(--gn)':'var(--rd)';}});}
+  }catch(e){}
+}
+
+// ===== CAUCIÓN CHART =====
+let cauInst=null;
+async function loadTasas(){
+  try{
+    const today=new Date(),from=new Date(today-35*864e5).toISOString().split('T')[0],to=today.toISOString().split('T')[0];
+    const r=await fetch(`/api/bcra?variable=34&from=${from}&to=${to}`);
+    if(!r.ok)throw new Error();
+    const data=(await r.json()).results||[];if(!data.length)throw new Error();
+    const labels=data.map(d=>new Date(d.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'short'}));
+    const values=data.map(d=>d.valor);
+    const last=values[values.length-1];
+    const tea=((Math.pow(1+last/100/365,365)-1)*100);
+    se('cau-tna',fPct(last));se('cau-tea',fPct(tea,1));se('r-badlar',fPct(last));
+    const ctx=document.getElementById('cau-chart');if(!ctx)return;
+    if(cauInst)cauInst.destroy();
+    cauInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'BADLAR TNA %',data:values,borderColor:'#3dd68c',backgroundColor:'rgba(61,214,140,.08)',borderWidth:1.5,pointRadius:0,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1a',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#aaa',callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% TNA`}}},scales:{x:{ticks:{color:'#555',font:{size:9},maxTicksLimit:6},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.04)'},position:'right'}}}});
+    se('cau-note','✦ Datos históricos BADLAR · Fuente: BCRA · Últimos 30 días');
+  }catch(e){se('cau-tna','Ver BCRA');}
+}
+
+// ===== ETTI CHART (referencia estática) =====
+let ettiInst=null,usdInst=null;
+function renderETTI(){
+  const ctx=document.getElementById('etti-chart');if(!ctx)return;
+  if(ettiInst)ettiInst.destroy();
+  const lec=[{x:1,y:35.2},{x:2,y:34.1},{x:3,y:33.0},{x:4,y:32.1},{x:5,y:31.5},{x:6,y:30.8},{x:7,y:30.2},{x:8,y:29.8}];
+  const bon=[{x:1,y:34.5},{x:2,y:33.2},{x:3,y:32.0},{x:5,y:30.5},{x:7,y:29.5},{x:9,y:28.8},{x:12,y:28.2}];
+  ettiInst=new Chart(ctx,{type:'line',data:{datasets:[{label:'LECAPS',data:lec,borderColor:'#3dd68c',backgroundColor:'rgba(61,214,140,.06)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#3dd68c',pointBorderColor:'#0e0e0e',pointBorderWidth:1.5,tension:.3,fill:false},{label:'BONCAPS',data:bon,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.06)',borderWidth:2,pointRadius:5,pointBackgroundColor:'#60a5fa',pointBorderColor:'#0e0e0e',pointBorderWidth:1.5,tension:.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1a',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#aaa',padding:8,callbacks:{title:i=>`Plazo: ${i[0].parsed.x} meses`,label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}% TNA`}}},scales:{x:{type:'linear',title:{display:true,text:'Plazo (meses)',color:'#555',font:{size:9}},ticks:{color:'#555',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},min:0},y:{title:{display:true,text:'TNA %',color:'#555',font:{size:9}},ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.04)'},position:'right'}}}});
+}
+function renderUSD(){
+  const ctx=document.getElementById('usd-chart');if(!ctx)return;
+  if(usdInst)usdInst.destroy();
+  const sov=[{x:4.2,y:10.9,label:'GD29'},{x:5.1,y:11.4,label:'GD30'},{x:10.2,y:12.1,label:'GD35'},{x:13.1,y:11.8,label:'GD38'},{x:16.0,y:12.3,label:'GD41'},{x:21.0,y:12.6,label:'GD46'},{x:5.1,y:12.0,label:'AL30'}];
+  const corp=[{x:1.8,y:8.8,label:'YPF 26'},{x:4.5,y:9.5,label:'YPF 29'},{x:2.4,y:7.9,label:'Pampa'},{x:1.6,y:8.1,label:'Telecom'},{x:3.1,y:9.8,label:'IRSA'},{x:1.9,y:7.5,label:'Galicia'},{x:2.6,y:8.4,label:'Arcor'},{x:3.4,y:7.2,label:'MELI'}];
+  usdInst=new Chart(ctx,{type:'scatter',data:{datasets:[{label:'Soberanos',data:sov.sort((a,b)=>a.x-b.x),borderColor:'#f56565',backgroundColor:'rgba(245,101,101,.15)',pointRadius:6,pointBackgroundColor:'#f56565',pointBorderColor:'#0e0e0e',pointBorderWidth:1.5,showLine:true,borderWidth:2,tension:.2,fill:false,order:2},{label:'ONs',data:corp.sort((a,b)=>a.x-b.x),borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.15)',pointRadius:6,pointBackgroundColor:'#fb923c',pointBorderColor:'#0e0e0e',pointBorderWidth:1.5,showLine:true,borderWidth:2,tension:.2,fill:false,order:1,borderDash:[5,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1a',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#f0f0f0',bodyColor:'#aaa',padding:8,callbacks:{title:i=>`${i[0].raw.label}`,label:c=>[`Años al venc.: ${c.parsed.x.toFixed(1)}`,`TIR USD: ${c.parsed.y.toFixed(1)}%`,`Tipo: ${c.dataset.label}`]}}},scales:{x:{title:{display:true,text:'Años al vencimiento',color:'#555',font:{size:9}},ticks:{color:'#555',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},min:0},y:{title:{display:true,text:'TIR USD %',color:'#555',font:{size:9}},ticks:{color:'#555',font:{size:9},callback:v=>v.toFixed(0)+'%'},grid:{color:'rgba(255,255,255,.04)'},position:'right'}}}});
+}
+
+// ===== RSS NEWS =====
+async function loadRSS(feedUrl,targetId,srcName,srcClass){
+  try{
+    const url=`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=5`;
+    const r=await fetch(url);if(!r.ok)throw new Error();
+    const data=await r.json();
+    if(data.status!=='ok'||!data.items?.length)throw new Error();
+    const html=data.items.slice(0,5).map(item=>{
+      const date=item.pubDate?new Date(item.pubDate).toLocaleDateString('es-AR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Hoy';
+      const desc=item.description?item.description.replace(/<[^>]+>/g,'').substring(0,120)+'...':'';
+      return`<div class="ni"><div class="nsr"><span class="nst ${srcClass}">${srcName}</span><span class="ntm">${date}</span></div><div class="nh">${item.title||''}</div>${desc?`<div class="ns">${desc}</div>`:''}<a class="nlnk" href="${item.link||'#'}" target="_blank" rel="noopener">Leer →</a></div>`;
+    }).join('');
+    sh(targetId,html);
+  }catch(e){sh(targetId,`<div style="color:var(--mt);font-size:12px;padding:10px 0">Ver noticias en las fuentes directas ↑</div>`);}
+}
+async function loadAllNews(){
+  // Argentina - Infobae economia
+  loadRSS('https://www.infobae.com/feeds/rss/economia/','n-arg-rss','Infobae','s1');
+  // Global - MarketWatch
+  loadRSS('https://feeds.marketwatch.com/marketwatch/marketpulse/','n-gl-rss','MarketWatch','s2');
+  // Crypto - CoinDesk
+  loadRSS('https://www.coindesk.com/arc/outboundfeeds/rss/','n-cry-rss','CoinDesk','s4');
+  // Brasil - Valor Economico (may not work, fallback)
+  loadRSS('https://valor.globo.com/rss/valor/','n-br-rss','Valor Econômico','s3');
+}
+
+// ===== BRASIL COMPANIES =====
+async function loadBrComp(){
+  const cos=[{sym:'PBR',name:'Petrobras',sec:'Energía'},{sym:'VALE',name:'Vale',sec:'Minería'},{sym:'ITUB',name:'Itaú Unibanco',sec:'Financiero'},{sym:'BBD',name:'Bradesco',sec:'Financiero'},{sym:'ABEV',name:'Ambev',sec:'Consumo'},{sym:'XP',name:'XP Inc.',sec:'Financiero'}];
+  let html='';
+  for(const co of cos){
+    try{
+      const r=await fetch(`/api/yahoo?symbol=${co.sym}`);
+      if(!r.ok)throw new Error();
+      const res=(await r.json()).chart.result[0];
+      const p=res.meta.regularMarketPrice,prev=res.meta.chartPreviousClose||p,ch=((p-prev)/prev*100);
+      html+=`<tr><td><div style="font-size:12px;font-weight:600">${co.name}</div><div style="font-size:9px;color:var(--mt)">${co.sec} · ${co.sym}</div></td><td style="font-size:13px;font-weight:600">${fUSD(p,2)}</td><td class="${chgCls(ch)}" style="font-size:12px">${chgStr(ch)}</td></tr>`;
+    }catch(e){html+=`<tr><td>${co.name}</td><td>—</td><td>—</td></tr>`;}
+  }
+  sh('b-cos',html||'<tr><td colspan="3" style="color:var(--mt);font-size:12px;padding:10px">Ver en Investing.com</td></tr>');
+}
+
+function calcDays(){const d=Math.max(0,Math.ceil((new Date('2026-10-05')-new Date())/864e5));['b-days','s-br-d','dc-br-days'].forEach(id=>se(id,d));}
+function updateTime(){se('upd-t','Actualizado: '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}));}
+
+async function loadAll(){
+  updateTime();calcDays();
+  await Promise.allSettled([loadDollar(),loadBTC(),loadFNG(),loadStocks(),loadReservas(),loadBrComp()]);
+  updateTime();
+}
+
+// ===== INIT =====
+loadAll();
+loadTasas();
+renderETTI();
+renderUSD();
+loadAllNews();
+updateMH();
+setInterval(updateMH,30000);
+setInterval(loadAll,5*60*1000);
+</script>
+</body>
+</html>
